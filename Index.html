@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HashGame 极速分析终端 v2.6</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        /* --- 全局深色主题 --- */
+        body {
+            background-color: #121416;
+            color: #ffffff;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+        }
+
+        .card {
+            background-color: #212529;
+            border: 1px solid #495057;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        /* 表格样式优化 */
+        .table { color: #f0f0f0; margin-bottom: 0; }
+        .table thead th {
+            color: #ffffff !important;
+            border-bottom: 2px solid #6c757d;
+            background-color: #1a1d20;
+            font-weight: 600;
+        }
+        .table-dark { background-color: #212529; }
+        .table-hover tbody tr:hover { color: #fff; background-color: #2c3034; }
+
+        /* 辅助文字颜色 */
+        .text-muted { color: #ced4da !important; } 
+
+        /* 号码球 */
+        .ball {
+            width: 32px; height: 32px; line-height: 32px; text-align: center;
+            border-radius: 50%; display: inline-block; font-weight: bold;
+            font-size: 15px; box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        /* 推荐卡片 */
+        .rec-card {
+            border-left: 4px solid #0d6efd;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #2b3035;
+            border-radius: 4px;
+        }
+        .rec-danger { border-left-color: #dc3545; background: #35181a; } 
+        .rec-warning { border-left-color: #ffc107; background: #332d18; } 
+
+        /* 形态分析条 */
+        .type-bar-bg { height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
+        .type-bar-fill { height: 100%; transition: width 0.5s; }
+
+        .loading-bar { height: 4px; background: #0d6efd; width: 0%; transition: width 0.3s; }
+
+        /* 作者栏样式 */
+        .author-box {
+            background-color: #2c3034;
+            border-radius: 25px;
+            padding: 5px 15px 5px 5px;
+            display: flex;
+            align-items: center;
+            border: 1px solid #495057;
+            transition: background 0.2s;
+        }
+        .author-box:hover { background-color: #343a40; }
+        
+        .author-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid #0d6efd;
+            object-fit: cover;
+        }
+        
+        .promo-link {
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .promo-link:hover { opacity: 0.9; }
+        
+        a { text-decoration: none; }
+
+        /* 阶梯概率统计条 */
+        .prob-row { margin-bottom: 6px; }
+        .prob-label { font-size: 12px; width: 60px; color: #adb5bd; }
+        .prob-bar { height: 18px; background: #333; border-radius: 4px; overflow: hidden; flex-grow: 1; position: relative; }
+        /* 字体稍微调大，增加阴影，确保能看清数字 */
+        .prob-fill { 
+            height: 100%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 11px; 
+            font-weight: bold; 
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,1); 
+            transition: width 0.5s; 
+            white-space: nowrap;
+        }
+        
+        /* 底部免责声明区域 */
+        .disclaimer-box {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #1a1d20;
+            border-radius: 4px;
+            border: 1px dashed #495057;
+            font-size: 12px;
+            color: #adb5bd;
+            text-align: center;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-white mb-0"><span class="text-primary">⚡</span> HashGame <span class="text-white-50 fs-5">极速分析终端 v2.6</span></h3>
+        
+        <div class="d-flex flex-column align-items-end">
+            <a href="https://x.com/miraflores0327" target="_blank" class="author-box mb-2 text-white">
+                <img src="author.jpg" onerror="this.src='https://ui-avatars.com/api/?name=Lao+Jia&background=0D8ABC&color=fff'" class="author-avatar" alt="老贾">
+                <div>
+                    <div class="fw-bold">老贾 <span class="text-muted small fw-normal ms-1">(@miraflores0327)</span></div>
+                    <div class="small text-info"><i class="bi bi-twitter-x me-1"></i>作者推文</div>
+                </div>
+            </a>
+            
+            <a href="https://t.me/+iryoJcZw7OdmOGU5" target="_blank" class="badge bg-primary bg-opacity-25 text-primary border border-primary mb-2 text-decoration-none py-1 px-2">
+                <i class="bi bi-send-fill me-1"></i> 点击加入电报群
+            </a>
+
+            <a href="https://hashgame.io/?ref=LAOJIA" target="_blank" class="promo-link badge bg-warning text-dark border border-warning d-flex align-items-center p-2">
+                <i class="bi bi-gift-fill me-2"></i>
+                <span>绑定推荐码 <strong class="mx-1">LAOJIA</strong> 领测试币</span>
+                <i class="bi bi-box-arrow-up-right ms-2 small"></i>
+            </a>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <button id="btnStart" class="btn btn-primary w-100 py-2 fw-bold" onclick="startAnalysis()">
+                <span id="btnText">🚀 启动 / 刷新数据</span>
+            </button>
+            <div class="progress mt-2" style="height: 6px; background: #333;">
+                <div id="progressBar" class="loading-bar"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-1 px-1">
+                <small class="text-muted" id="statusText">准备就绪 (智能增量模式)</small>
+                <small class="text-muted" id="dataStatus">本地暂无数据</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mb-3">
+            
+            <div class="card p-3 mb-3">
+                <h5 class="card-title text-white border-bottom pb-2 border-secondary d-flex justify-content-between">
+                    <span>🔄 形态趋势 (数字 vs 字母)</span>
+                    <small class="text-muted fs-6">当前连续状态</small>
+                </h5>
+                <div class="row g-3 mb-3" id="typeAnalysisBoard">
+                    <div class="text-center text-muted py-3">等待数据分析...</div>
+                </div>
+
+                <div class="bg-dark p-3 rounded border border-secondary" id="probAnalysisBoard" style="display:none;">
+                    <h6 class="text-white text-opacity-75 small mb-3 border-bottom border-secondary pb-2 d-flex justify-content-between">
+                        <span><i class="bi bi-crosshair"></i> 历史反龙胜率 (实盘回测)</span>
+                        <span class="text-muted" style="font-size:10px;">*样本越少 波动越大</span>
+                    </h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6 border-end border-secondary">
+                            <div class="small text-info mb-2 fw-bold">数字(0-9) 连出 N 期后 → 转字母概率</div>
+                            
+                            <div class="d-flex align-items-center prob-row">
+                                <span class="prob-label">连出 4</span>
+                                <div class="prob-bar">
+                                    <div id="prob_digit_4" class="prob-fill bg-info text-dark" style="width: 0%">-</div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center prob-row">
+                                <span class="prob-label">连出 5</span>
+                                <div class="prob-bar">
+                                    <div id="prob_digit_5" class="prob-fill bg-info text-dark" style="width: 0%">-</div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center prob-row">
+                                <span class="prob-label">连出 6</span>
+                                <div class="prob-bar">
+                                    <div id="prob_digit_6" class="prob-fill bg-info text-dark" style="width: 0%">-</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 ps-md-3 mt-3 mt-md-0">
+                            <div class="small text-warning mb-2 fw-bold">字母(A-F) 连出 N 期后 → 转数字概率</div>
+                            
+                            <div class="d-flex align-items-center prob-row">
+                                <span class="prob-label">连出 2</span>
+                                <div class="prob-bar">
+                                    <div id="prob_letter_2" class="prob-fill bg-warning text-dark" style="width: 0%">-</div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center prob-row">
+                                <span class="prob-label">连出 3</span>
+                                <div class="prob-bar">
+                                    <div id="prob_letter_3" class="prob-fill bg-warning text-dark" style="width: 0%">-</div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center prob-row">
+                                <span class="prob-label">连出 4</span>
+                                <div class="prob-bar">
+                                    <div id="prob_letter_4" class="prob-fill bg-warning text-dark" style="width: 0%">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-3 h-100">
+                <h5 class="card-title text-white border-bottom pb-2 border-secondary">📊 单码遗漏大数据 (0-F)</h5>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover text-center mt-2 align-middle">
+                        <thead>
+                            <tr>
+                                <th>号码</th>
+                                <th>当前遗漏</th>
+                                <th>历史最大遗漏</th>
+                                <th>最大连出</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statsBody">
+                            <tr><td colspan="5" class="text-muted py-4">等待抓取...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card p-3 mb-3">
+                <h5 class="card-title text-white border-bottom pb-2 border-secondary">🎯 智能追号雷达</h5>
+                <div class="alert alert-dark border-secondary p-2 mb-2 small text-info fw-bold">
+                    <i class="bi bi-info-circle"></i> 策略：当前遗漏值接近历史极值 70% 时触发
+                </div>
+                <div id="recommendationList" style="min-height: 100px;">
+                    <div class="text-center text-muted py-4">暂无高危信号</div>
+                </div>
+            </div>
+            
+            <div class="card p-3">
+                <h5 class="card-title text-white border-bottom pb-2 border-secondary">📝 实时开奖 (近10期)</h5>
+                <ul class="list-group list-group-flush small" id="recentHistory">
+                    <li class="list-group-item bg-transparent text-muted border-0 ps-0">暂无记录</li>
+                </ul>
+                
+                <div class="disclaimer-box">
+                    声明：本工具仅作为辅助分析用途<br>不构成任何投资建议<br>市场有风险，决策需谨慎
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = "https://mempool.space/api";
+    const WINDOW_SIZE = 500; 
+    let allBlocks = []; 
+    
+    const CHARS = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'];
+    const DIGITS = ['0','1','2','3','4','5','6','7','8','9'];
+    const LETTERS = ['a','b','c','d','e','f'];
+
+    async function startAnalysis() {
+        const btn = document.getElementById('btnStart');
+        const status = document.getElementById('statusText');
+        const bar = document.getElementById('progressBar');
+        const btnText = document.getElementById('btnText');
+        const dataStatus = document.getElementById('dataStatus');
+        
+        btn.disabled = true;
+        
+        try {
+            status.innerText = "正在连接节点...";
+            const tipRes = await fetch(`${API_BASE}/blocks/tip/height`);
+            const tipHeight = parseInt(await tipRes.text());
+            
+            let fetchStartHeight = tipHeight;
+            let lastKnownHeight = -1;
+            let isIncremental = false;
+
+            if (allBlocks.length > 0) {
+                lastKnownHeight = allBlocks[0].height; 
+                const diff = tipHeight - lastKnownHeight;
+
+                if (diff === 0) {
+                    status.innerText = "数据已是最新";
+                    bar.style.width = "100%";
+                    setTimeout(() => { btn.disabled = false; }, 500);
+                    return; 
+                }
+                status.innerText = `检测到新区块: +${diff} (增量更新中)`;
+                isIncremental = true;
+            } else {
+                status.innerText = "首次初始化: 全量抓取 500 期...";
+            }
+
+            let fetchedCount = 0;
+            let currentRequestHeight = tipHeight;
+            let newBlocks = [];
+            
+            while (true) {
+                let progress = isIncremental ? 90 : (fetchedCount / WINDOW_SIZE) * 100;
+                bar.style.width = `${progress}%`;
+
+                const res = await fetch(`${API_BASE}/v1/blocks/${currentRequestHeight}`);
+                if (!res.ok) throw new Error("API 连接中断");
+                const chunk = await res.json(); 
+                
+                if (chunk.length === 0) break;
+
+                let shouldStop = false;
+                for (let block of chunk) {
+                    if (isIncremental && block.height <= lastKnownHeight) {
+                        shouldStop = true;
+                        break; 
+                    }
+                    if (!isIncremental && fetchedCount >= WINDOW_SIZE) {
+                        shouldStop = true;
+                        break;
+                    }
+
+                    const hash = block.id;
+                    const resultChar = hash.slice(-1);
+                    newBlocks.push({
+                        height: block.height,
+                        hash: hash,
+                        result: resultChar,
+                        isDigit: DIGITS.includes(resultChar)
+                    });
+                    fetchedCount++;
+                }
+                
+                if (shouldStop) break;
+                currentRequestHeight = chunk[chunk.length - 1].height - 1;
+                if (!isIncremental) await new Promise(r => setTimeout(r, 80)); 
+            }
+
+            if (isIncremental) {
+                allBlocks = newBlocks.concat(allBlocks);
+            } else {
+                allBlocks = newBlocks;
+            }
+
+            if (allBlocks.length > WINDOW_SIZE) {
+                allBlocks = allBlocks.slice(0, WINDOW_SIZE);
+            }
+
+            status.innerText = "数据整合完成，正在计算...";
+            bar.style.width = "100%";
+            
+            analyzeData();
+            
+            btnText.innerText = "刷新数据 (点我只抓新数据)";
+            status.innerText = `分析完成 (最新高度: ${tipHeight})`;
+            dataStatus.innerText = `本地库存: ${allBlocks.length} 期`;
+            btn.disabled = false;
+
+        } catch (e) {
+            console.error(e);
+            status.innerText = "错误: " + e.message;
+            alert("网络请求失败，请检查网络连接");
+            btn.disabled = false;
+        }
+    }
+
+    function analyzeData() {
+        const data = allBlocks;
+        
+        // 1. 单码分析
+        let stats = {};
+        CHARS.forEach(char => {
+            stats[char] = { char: char, currentOmission: 0, maxOmission: 0, count: 0, lastSeenIndex: -1, gaps: [] };
+        });
+
+        for (let i = 0; i < data.length; i++) {
+            const char = data[i].result;
+            if (STATS_CHAR = stats[char]) {
+                STATS_CHAR.count++;
+                if (STATS_CHAR.lastSeenIndex === -1) {
+                    STATS_CHAR.currentOmission = i; 
+                    STATS_CHAR.lastSeenIndex = i;
+                } else {
+                    const gap = i - STATS_CHAR.lastSeenIndex - 1;
+                    STATS_CHAR.gaps.push(gap);
+                    STATS_CHAR.lastSeenIndex = i;
+                }
+            }
+        }
+
+        CHARS.forEach(c => {
+            const s = stats[c];
+            if (s.count === 0) {
+                s.currentOmission = data.length;
+                s.maxOmission = data.length;
+            } else {
+                let historicalMax = s.gaps.length > 0 ? Math.max(...s.gaps) : 0;
+                s.maxOmission = Math.max(historicalMax, s.currentOmission);
+            }
+        });
+
+        // 2. 形态分析
+        let typeStats = {
+            digit: { currentStreak: 0, maxStreak: 0, name: "数字 (0-9)" },
+            letter: { currentStreak: 0, maxStreak: 0, name: "字母 (a-f)" }
+        };
+
+        if (data.length > 0) {
+            let firstIsDigit = data[0].isDigit;
+            let currentStreakCount = 0;
+            for(let i=0; i<data.length; i++) {
+                if (data[i].isDigit === firstIsDigit) {
+                    currentStreakCount++;
+                } else {
+                    break;
+                }
+            }
+            if (firstIsDigit) {
+                typeStats.digit.currentStreak = currentStreakCount;
+            } else {
+                typeStats.letter.currentStreak = currentStreakCount;
+            }
+
+            let tempDigitStreak = 0;
+            let tempLetterStreak = 0;
+            for(let i=0; i<data.length; i++) {
+                if (data[i].isDigit) {
+                    tempDigitStreak++;
+                    tempLetterStreak = 0; 
+                    if (tempDigitStreak > typeStats.digit.maxStreak) typeStats.digit.maxStreak = tempDigitStreak;
+                } else {
+                    tempLetterStreak++;
+                    tempDigitStreak = 0; 
+                    if (tempLetterStreak > typeStats.letter.maxStreak) typeStats.letter.maxStreak = tempLetterStreak;
+                }
+            }
+        }
+
+        // 3. 概率回测 (修改为 4-5-6 和 2-3-4)
+        let matrix = {
+            digit: { 
+                4: { total: 0, break: 0 }, 
+                5: { total: 0, break: 0 }, 
+                6: { total: 0, break: 0 } 
+            },
+            letter: { 
+                2: { total: 0, break: 0 }, 
+                3: { total: 0, break: 0 }, 
+                4: { total: 0, break: 0 } 
+            }
+        };
+
+        let currentRun = 0;
+        let isDigitRun = false; 
+
+        for (let i = data.length - 1; i >= 0; i--) {
+            let isD = data[i].isDigit;
+            if (i === data.length - 1) {
+                currentRun = 1;
+                isDigitRun = isD;
+                continue;
+            }
+
+            if (isD === isDigitRun) {
+                currentRun++; 
+            } else {
+                // Break occurred
+                if (isDigitRun) {
+                    if (currentRun >= 4) { matrix.digit[4].total++; if(currentRun===4) matrix.digit[4].break++; }
+                    if (currentRun >= 5) { matrix.digit[5].total++; if(currentRun===5) matrix.digit[5].break++; }
+                    if (currentRun >= 6) { matrix.digit[6].total++; if(currentRun===6) matrix.digit[6].break++; }
+                } else {
+                    if (currentRun >= 2) { matrix.letter[2].total++; if(currentRun===2) matrix.letter[2].break++; }
+                    if (currentRun >= 3) { matrix.letter[3].total++; if(currentRun===3) matrix.letter[3].break++; }
+                    if (currentRun >= 4) { matrix.letter[4].total++; if(currentRun===4) matrix.letter[4].break++; }
+                }
+                currentRun = 1;
+                isDigitRun = isD;
+            }
+        }
+
+        const getRate = (obj) => obj.total === 0 ? 0 : Math.round((obj.break / obj.total) * 100);
+
+        let probResults = {
+            digit: { 
+                4: { rate: getRate(matrix.digit[4]), detail: matrix.digit[4] }, 
+                5: { rate: getRate(matrix.digit[5]), detail: matrix.digit[5] }, 
+                6: { rate: getRate(matrix.digit[6]), detail: matrix.digit[6] } 
+            },
+            letter: { 
+                2: { rate: getRate(matrix.letter[2]), detail: matrix.letter[2] }, 
+                3: { rate: getRate(matrix.letter[3]), detail: matrix.letter[3] }, 
+                4: { rate: getRate(matrix.letter[4]), detail: matrix.letter[4] } 
+            }
+        };
+
+        renderUI(stats, typeStats, probResults, data);
+    }
+
+    function renderUI(stats, typeStats, probResults, rawData) {
+        const tbody = document.getElementById('statsBody');
+        const recList = document.getElementById('recommendationList');
+        const recentList = document.getElementById('recentHistory');
+        const typeBoard = document.getElementById('typeAnalysisBoard');
+        const probBoard = document.getElementById('probAnalysisBoard');
+        
+        tbody.innerHTML = '';
+        recList.innerHTML = '';
+        recentList.innerHTML = '';
+        typeBoard.innerHTML = '';
+
+        probBoard.style.display = 'block';
+        
+        // 更新概率条 (增加样本数显示)
+        const updateBar = (id, dataObj) => {
+            const el = document.getElementById(id);
+            const rate = dataObj.rate;
+            const detail = dataObj.detail;
+            
+            const displayWidth = Math.max(rate, 25);
+            
+            el.style.width = `${displayWidth}%`;
+            el.innerText = `${rate}% [${detail.break}/${detail.total}]`;
+            
+            if (rate >= 60) el.className = `prob-fill bg-success text-white`; 
+            else if (rate >= 40) el.className = `prob-fill bg-info text-dark`;
+            else el.className = `prob-fill bg-secondary text-white`;
+        };
+
+        updateBar('prob_digit_4', probResults.digit[4]);
+        updateBar('prob_digit_5', probResults.digit[5]);
+        updateBar('prob_digit_6', probResults.digit[6]);
+
+        updateBar('prob_letter_2', probResults.letter[2]);
+        updateBar('prob_letter_3', probResults.letter[3]);
+        updateBar('prob_letter_4', probResults.letter[4]);
+
+
+        const renderTypeBar = (key, data, oppositeKey) => {
+            const isHot = data.currentStreak > 0;
+            const percentage = Math.min((data.currentStreak / data.maxStreak) * 100, 100).toFixed(0);
+            const colorClass = key === 'digit' ? 'bg-info' : 'bg-warning';
+            
+            let alertHtml = '';
+            if ((key === 'digit' && data.currentStreak >= 5) || (key === 'letter' && data.currentStreak >= 3)) {
+                alertHtml = `
+                    <div class="p-2 mt-2 bg-danger bg-opacity-25 border border-danger rounded text-danger small fw-bold d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <div>${data.name} 已连续出现 ${data.currentStreak} 期，建议反打！</div>
+                    </div>
+                `;
+                
+                recList.innerHTML += `
+                    <div class="rec-card rec-danger">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="text-white mb-0">形态博弈信号</h6>
+                            <span class="badge bg-danger">反打机会</span>
+                        </div>
+                        <div class="text-white-50 small mt-2">
+                            ${data.name} 已连出 <strong class="text-white">${data.currentStreak}</strong> 期
+                        </div>
+                        <div class="text-warning small mt-1 fw-bold">建议：投 ${key==='digit'?'字母':'数字'}</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="col-6">
+                    <div class="p-2 border border-secondary rounded bg-dark h-100">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small text-white">${data.name}</span>
+                            <span class="small ${isHot ? 'text-white fw-bold' : 'text-muted'}">${isHot ? '连出: ' + data.currentStreak : '当前未出'}</span>
+                        </div>
+                        <div class="type-bar-bg">
+                            <div class="type-bar-fill ${colorClass}" style="width: ${isHot ? percentage : 0}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <span class="small text-muted" style="font-size:10px">历史极值: ${data.maxStreak}</span>
+                        </div>
+                        ${alertHtml}
+                    </div>
+                </div>
+            `;
+        };
+
+        typeBoard.innerHTML += renderTypeBar('digit', typeStats.digit, 'letter');
+        typeBoard.innerHTML += renderTypeBar('letter', typeStats.letter, 'digit');
+
+
+        let statsArray = Object.values(stats);
+        
+        statsArray.forEach(s => {
+            let badgeClass = 'bg-dark text-secondary border border-secondary';
+            let statusText = '平稳';
+            
+            if (s.currentOmission >= s.maxOmission) {
+                badgeClass = 'bg-danger text-white border-danger';
+                statusText = '🔥 破纪录';
+            } else if (s.currentOmission >= s.maxOmission * 0.7) {
+                badgeClass = 'bg-warning text-dark border-warning';
+                statusText = '⚡ 极热';
+            }
+
+            const tr = `
+                <tr>
+                    <td><span class="ball text-white" style="background:#444">${s.char.toUpperCase()}</span></td>
+                    <td class="fw-bold ${s.currentOmission > 20 ? 'text-danger' : 'text-white'}">${s.currentOmission}</td>
+                    <td class="text-muted">${s.maxOmission}</td>
+                    <td class="text-muted">-</td> 
+                    <td><span class="badge ${badgeClass}" style="min-width:60px">${statusText}</span></td>
+                </tr>
+            `;
+            tbody.innerHTML += tr;
+        });
+
+        let recommendations = statsArray.filter(s => s.currentOmission >= s.maxOmission * 0.7);
+        recommendations.sort((a, b) => (b.currentOmission/b.maxOmission) - (a.currentOmission/a.maxOmission));
+
+        if (recommendations.length === 0 && recList.innerHTML === '') { 
+            recList.innerHTML = '<div class="alert alert-success bg-opacity-10 text-success border-success text-center">当前盘面极度平稳<br>暂无高胜率切入点</div>';
+        } else {
+            recommendations.forEach(s => {
+                const ratio = (s.currentOmission / s.maxOmission * 100).toFixed(0);
+                let styleClass = 'rec-card';
+                let tip = `逼近极值 ${ratio}%`;
+                
+                if (s.currentOmission >= s.maxOmission) {
+                    styleClass += ' rec-danger';
+                    tip = `⚠️ 警告：已突破历史极值！`;
+                } else {
+                    styleClass += ' rec-warning';
+                }
+
+                recList.innerHTML += `
+                    <div class="${styleClass}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 text-white">号码 ${s.char.toUpperCase()}</h5>
+                            <span class="badge bg-light text-dark">单码追号</span>
+                        </div>
+                        <div class="mt-2 text-white-50 small">
+                            当前遗漏: <strong class="text-white fs-6">${s.currentOmission}</strong> / 
+                            历史极值: <strong class="text-white-50">${s.maxOmission}</strong>
+                        </div>
+                        <div class="mt-1 text-warning small fw-bold">${tip}</div>
+                    </div>
+                `;
+            });
+        }
+
+        const displayLimit = Math.min(10, rawData.length);
+        for(let i=0; i<displayLimit; i++) {
+            if (rawData[i]) {
+                let resChar = rawData[i].result.toUpperCase();
+                let isDigit = DIGITS.includes(rawData[i].result);
+                let colorClass = isDigit ? 'text-info' : 'text-warning';
+                
+                recentList.innerHTML += `
+                    <li class="list-group-item bg-transparent border-bottom border-secondary d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted font-monospace small">#${rawData[i].height}</span>
+                        <span class="${colorClass} fw-bold fs-6">${resChar}</span>
+                    </li>
+                `;
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
